@@ -1,0 +1,594 @@
+/* eslint-disable no-undef, no-unused-vars */
+let bubbles = [];
+let fishes = [];
+let pellets = [];
+let prowns = [];
+let fishfloor;
+const WATERLEVEL = 50;
+let b;
+
+function setup() {
+  createCanvas(800, 600);
+  textSize(9);
+
+  for (let i = 0; i < 100; i++) {
+    bubbles[i] = new TankBubble();
+  }
+
+  for (let i = 0; i < 1; i++) {
+    fishes[i] = new Fish();
+  }
+
+  for (let i = 0; i < 10; i++) {
+    pellets[i] = new Pellet();
+  }
+
+  for (let i = 0; i < 5; i++) {
+    prowns[i] = new Prown();
+  }
+
+  createFishFloor();
+}
+
+function createFishFloor() {
+  // create fishfloor texture
+  fishfloor = createImage(width, 40);
+  fishfloor.loadPixels();
+  for (var x = 0; x < fishfloor.width; x++) {
+    for (var y = 0; y < fishfloor.height; y++) {
+      //var a = map(y, 0, fishfloor.height, 255, 0);
+      var c = color(random(60, 100), random(100), 0, 160);
+      fishfloor.set(x, y, c);
+    }
+  }
+  fishfloor.updatePixels();
+}
+
+function draw() {
+  background(0, 200, 255);
+  noStroke();
+  fill(0, 150, 160);
+  rect(0, WATERLEVEL, width, height);
+  // fill(255,0,0);
+  // rect(0,height-20,width,height-20);
+  image(fishfloor, 0, height - 40);
+  fill(100, 100, 100);
+  rect(100, height - 60, 5, 30);
+
+  fill(255);
+
+  //doBubbles();
+  doPellets();
+  doFishes();
+  //doProwns();
+}
+
+function doProwns() {
+  for (let p of prowns) {
+    p.update();
+    p.render();
+  }
+}
+function doBubbles() {
+  for (let b of bubbles) {
+    b.update();
+    b.render();
+  }
+}
+
+function doPellets() {
+  for (let p of pellets) {
+    p.update();
+    p.render();
+  }
+}
+
+function doFishes() {
+  for (let f of fishes) {
+    f.update();
+
+    f.render();
+
+    // randomly wait
+    if (random(100) < 0.2 && f.state === 0) {
+      //  f.targetCount++;
+      //    print("Food target" + f.targetCount);
+      //  let p = int(random(pellets.length));
+      //  f.currentTarget = pellets[p];
+      // print(f.currentTarget.pos.x)
+      //f.targetFood();
+      //   f.state = 3;
+    }
+  }
+}
+
+class TankBubble {
+  constructor() {
+    this.startx = 100;
+    this.pos = createVector(this.startx, height - 63);
+    this.vel = createVector(random(-0.08, 0.08), -random(0.09, 0.7));
+    this.acc = createVector(0, 0);
+    this.size = random(1, 5);
+    this.atSurface = false;
+    this.surfaceLife = floor(random(30));
+    this.kSize = floor(random(this.size / 0.8));
+  }
+
+  update() {
+    if (!this.atSurface) {
+      this.vel.add(this.acc);
+      this.vel.x = random(-0.7, 0.7);
+      if (random(10) > 9.5) {
+        this.vel.y = random(-0.09, -3.7);
+      }
+
+      if (random() < 0.001) {
+        this.pos.y = height - 65 + random(2, 6);
+        this.pos.x = this.startx;
+      }
+
+      this.pos.add(this.vel);
+      this.vel.add(this.acc);
+      this.vel.limit(-5);
+      this.acc.mult(0);
+    }
+
+    if (this.pos.y < WATERLEVEL + 1) {
+      this.atSurface = true;
+    }
+
+    if (this.atSurface) {
+      this.vel.y = 0;
+      this.pos.y = WATERLEVEL - 1 + this.kSize / 2;
+      this.surfaceLife -= 0.1;
+      this.vel.x = random(-1.7, 1.7);
+      //this.add.mult(0.5);
+      this.pos.add(this.vel);
+      this.vel.add(this.acc);
+      this.vel.limit(-5);
+      this.acc.mult(0);
+    }
+
+    if (this.atSurface && this.surfaceLife <= 0) {
+      this.pos.y = height - 65 + random(2, 6);
+      this.pos.x = this.startx;
+      this.atSurface = false;
+      this.surfaceLife = floor(random(30));
+    }
+  }
+  render() {
+    fill(255, 255, 255, random(40, 100));
+    noStroke();
+    stroke(190);
+    ellipse(
+      this.pos.x,
+      this.pos.y,
+      this.size + this.kSize,
+      this.size + this.kSize
+    );
+
+    noStroke();
+    fill(255, 255, 255, 160);
+    ellipse(
+      this.pos.x + this.size / 2 + random(-1, 1),
+      this.pos.y - random(0.5),
+      (this.size + this.kSize) / 5,
+      (this.size + this.kSize) / 5
+    );
+  }
+}
+
+class Fish {
+  constructor() {
+    this.pos = createVector(random(width / 2), random(height / 2));
+    this.vel = p5.Vector.random2D(); //createVector(0,0);
+    this.acc = createVector(0, 0);
+    this.heading = 0;
+    this.targetCount = 0;
+    this.currentTarget = null;
+    this.target = createVector(0, 0);
+    this.genNewTarget = true;
+    this.waitTime = this.generateWaitTime();
+    this.eatTime = 0;
+    // this.energy=10;
+    this.state = 0; // 0 wait, 1 movearound, 2 hunt, 3 eat
+  }
+
+  targetFood() {
+    this.target = createVector(
+      this.currentTarget.pos.x,
+      this.currentTarget.pos.y
+    );
+
+    this.target.sub(this.pos);
+    this.energy += 1;
+    line(0, 0, this.currentTarget.pos.x, this.currentTarget.pos.y);
+    this.target.normalize();
+    //this.target.mult(10.6*0.3*0.1/(this.target.mag()*this.target.mag()))
+    this.acc = this.target;
+    if (this.target.mag() <= 0) {
+      this.state = 100;
+    }
+
+    if (this.state === 100) {
+      this.eatFood();
+    }
+  }
+
+  moveAround() {
+    if (this.genNewTarget && this.target !== "undefined") {
+      this.target = createVector(width, height);
+
+      this.genNewTarget = false;
+    }
+
+    stroke(255, 0, 0);
+    line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+    // console.log(this.pos);
+    this.target.sub(this.pos);
+    this.target.normalize();
+
+    this.acc = this.target;
+  }
+
+  eatFood() {
+    if (Utils.calcDist2d(this.currentTarget.pos, this.pos) <= 30) {
+      // this.currentTarget.pos.y = random(-1000, -500);
+      console.log("Eating pellet");
+      if (this.currentTarget instanceof Pellet) {
+        this.currentTarget.reset();
+      }
+      this.state = 0;
+    }
+    this.target = createVector(
+      this.currentTarget.pos.x,
+      this.currentTarget.pos.y
+    );
+
+    this.target.sub(this.pos);
+    this.energy += 1;
+    line(0, 0, this.currentTarget.pos.x, this.currentTarget.pos.y);
+    this.target.normalize();
+    // this.target.mult(
+    //   10.6 * 0.3 * 0.1 / (this.target.mag() * this.target.mag())
+    // );
+    this.acc = this.target;
+    this.state -= 0.01;
+
+    if (this.state <= 0) {
+      // pellets.splice( pellets.indexOf(this.target), 1 );
+      //   pellets.push(new Pellet())
+      //this.currentTarget.reset();
+    }
+  }
+
+  generateWaitTime() {
+    this.waitTime = random(200, 500);
+    return this.waitTime;
+  }
+
+  update() {
+    this.pos.add(this.vel);
+    this.vel.add(this.acc);
+    this.vel.limit(1.4);
+
+    this.acc.mult(0);
+
+    if (this.state === 0) {
+      // wait for a certain time
+
+      this.waitTime -= 0.5;
+      // console.log(this.waitTime);
+      if (this.waitTime <= 0) {
+        this.state = 1;
+        this.genNewTarget = true;
+        this.generateWaitTime();
+      }
+    }
+
+    if (this.state === 1) {
+      this.moveAround();
+      text(this.target, 10, 10);
+      if (Utils.calcDist2d(this.pos, this.target) <= 15) {
+        console.log("at target");
+        this.state = 0;
+      }
+    }
+
+    if (this.state === 1) {
+      if (random(400) < 0.2) {
+        this.state = 0;
+      }
+    }
+
+    if (random() < 0.0002) {
+      this.state = 0;
+      this.generateWaitTime();
+    }
+
+    if (this.pos.x < 12) {
+      this.pos.x = 12;
+    }
+    if (this.pos.x > width - 12) {
+      this.pos.x = width - 12;
+    }
+    if (this.pos.y < WATERLEVEL + 10) {
+      this.pos.y = WATERLEVEL + 10;
+    }
+    if (this.pos.y > height - 26) {
+      this.pos.y = height - 26;
+    }
+  }
+
+  render() {
+    fill(200 - this.energy / 100, 255, 100);
+    noStroke();
+
+    ellipse(this.pos.x, this.pos.y, 25, 25);
+    stroke(0);
+
+    if (this.currentTarget !== null) {
+      line(
+        this.currentTarget.pos.x,
+        this.currentTarget.pos.y,
+        this.pos.x,
+        this.pos.y
+      );
+    }
+    fill(0);
+    textSize(10);
+    text(this.state, this.pos.x + 10, this.pos.y + 10);
+  }
+}
+
+class Utils {
+  static calcDist2d(a, b) {
+    let dist = 0;
+
+    dist = abs(Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2)));
+    //print(dist)
+    return dist;
+  }
+}
+
+class Prown {
+  constructor() {
+    this.pos = createVector(random(width), random(WATERLEVEL + 5, height - 50));
+    this.vel = createVector(random(-5, 5), random(-5, 5));
+    this.acc = createVector(0, 0);
+    this.target = createVector(0, 0);
+    this.current = createVector(0, 0);
+    this.holdingPellet = this.target;
+    this.state = 0; //0 move around,   1 target a pellet,  2 // move towards pellet,  3 move pellet randomly
+
+    this.PTIME = 0.0008;
+    this.MOVETIME = 0.001;
+    this.energy = 1000;
+  }
+  update() {
+    if (this.state === 0) {
+      this.moveAround();
+      if (random() < this.MOVETIME) {
+        this.state = 1;
+        //print(10)
+      }
+    }
+
+    if (this.state === 1) {
+      this.setTarget();
+      this.state = 2;
+    }
+
+    if (this.state === 2) {
+      this.moveTowardsPellet();
+
+      // random chance to loose interest in the pellet
+      if (random() < 0.0002) {
+        this.state = 0;
+
+        // only in state 2
+        if (this.holdingPellet instanceof Pellet) {
+          this.holdingPellet.vel.y = random(2, 6);
+        }
+      }
+    }
+    this.pos.add(this.vel);
+    this.vel.add(this.acc);
+    this.vel.limit(0.3);
+
+    this.pos.x = constrain(this.pos.x, 5, width - 5);
+    this.pos.y = constrain(this.pos.y, WATERLEVEL + 2, height - 5);
+
+    if (this.state === 2) {
+      if (Utils.calcDist2d(this.pos, this.target.pos) <= 5) {
+        this.state = 3;
+        this.holdingPellet = this.target;
+        this.current = this.setRandomPoint();
+      }
+    }
+
+    if (this.state === 3) {
+      this.movePelletAroundRandom();
+    }
+  }
+
+  movePelletAroundRandom() {
+    this.holdingPellet.pos.x = this.pos.x + 2;
+    this.holdingPellet.pos.y = this.pos.y + 2;
+
+    if (random() < this.PTIME) {
+      this.state = 0;
+      this.holdingPellet.vel.x = 0;
+      this.holdingPellet.vel.y = 0;
+    }
+  }
+
+  moveTowardsPellet() {
+    this.current = createVector(this.target.pos.x, this.target.pos.y);
+
+    this.current.sub(this.pos);
+    this.current.normalize();
+
+    this.acc = this.current;
+
+    //console.log(this.target.pos)
+    // line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+
+    // this.target.pos.mult(
+    //   10.6 * 0.3 * 0.1 / (this.target.pos.mag() * this.target.pos.mag())
+    // );
+  }
+
+  moveAround() {
+    this.vel.x = random(-0.5, 0.5);
+    this.vel.y = random(-0.5, 0.5);
+  }
+
+  setTarget() {
+    let l = floor(random(pellets.length));
+    this.target = pellets[l];
+  }
+
+  setRandomPoint() {
+    return createVector(floor(random(width)), floor(random(height - 5)));
+  }
+
+  render() {
+    fill(200, 0, 0);
+    noStroke();
+    // textSize(24)
+    // text(this.state,this.pos.x+5,this.pos.y)
+    if (this.target != null) {
+      //line(0, 0, this.target.x, this.target.y);
+    }
+    ellipse(this.pos.x, this.pos.y, 7, 7);
+  }
+}
+
+class Pellet {
+  constructor() {
+    this.pos = createVector(random(10, width - 10), random(-5000));
+    this.vel = createVector(random(-0.05, 0.05), random(0.6));
+    this.acc = createVector(0, 0);
+    this.size = 6;
+  }
+
+  reset() {
+    this.pos = createVector(random(10, width - 10), random(-5000));
+    this.vel = createVector(random(-0.05, 0.05), random(0.6));
+    this.acc = createVector(0, 0);
+  }
+
+  update() {
+    this.vel.x = random(-0.177, 0.177);
+    this.pos.add(this.vel);
+    this.vel.add(this.acc);
+    this.vel.limit(0.4);
+
+    if (this.pos.y >= height - random(10, 30)) {
+      //this.pos.y = random(-100, -10);
+      //this.pos.x = random(width / 2);
+      this.vel.x = random(-0.07 * sin(30), 0.07 * sin(30));
+      //this.vel.y =0;
+      this.acc = 0.4;
+    }
+    if (this.pos.x < 0) {
+      this.pos.x = 0;
+    }
+    if (this.pos.x > width - this.size) {
+      this.pos.x = width - this.size;
+    }
+
+    // if outside the boundary, take out and set to start from top
+    if (this.pos.x > width + this.size || this.pos.x < 0) {
+      this.pos = createVector(random(10, width - 10), random(-5000));
+    }
+
+    if (this.pos.y > height + this.size) {
+      this.pos = createVector(random(10, width - 10), random(-5000));
+    }
+
+    // check if pellet is in air, if so drop quicker.
+    if (this.pos.y <= WATERLEVEL) {
+      this.vel.y = random(1, 4);
+      this.vel.limit(10);
+    } else {
+      this.vel.limit(random(0.3, 0.3));
+      // if pellet vel is very low then add gravity
+      if (this.vel.y > 0.2) {
+        this.vel.y = random(0.6);
+      }
+    }
+  }
+
+  render() {
+    fill(0, 230, 0);
+    stroke(100, 100, 100, 180);
+    ellipse(this.pos.x, this.pos.y, this.size, this.size);
+  }
+}
+
+// class StateMachine {
+//   constructor() {
+//     this.states = [];
+//     this.prevState = null;
+//     this.currentState = null;
+//   }
+
+//   transition(s) {
+//     this.prevState = this.currentState;
+//     this.currentState = s;
+//   }
+// }
+
+// class State {
+//   constructor(s, f) {
+//     this.data = s;
+//     this.transitValue = f;
+//   }
+// }
+
+class Bubble {
+  constructor(pos) {
+    this.startx = pos.x;
+    this.pos = pos;
+    this.vel = createVector(random(-0.08, 0.08), -random(0.09, 0.7));
+    this.acc = createVector(0, 0);
+    this.size = random(1, 5);
+    this.atSurface = false;
+    this.surfaceLifeTime = floor(random(100000));
+  }
+
+  update() {
+    this.vel.add(this.acc);
+    this.vel.x = random(-0.7, 0.7);
+    if (random(10) > 9.5) {
+      this.vel.y = random(-0.09, -1.7);
+    }
+
+    this.pos.add(this.vel);
+    this.vel.add(this.acc);
+    this.vel.limit(-5);
+    this.acc.mult(0);
+
+    if (this.pos.y < WATERLEVEL) {
+      this.atSurface = true;
+    }
+
+    if (this.atSurface) {
+      this.atSurface -= 0.1;
+      this.vel.mult(0);
+    }
+
+    if (this.atSurface && this.surfaceLifeTime <= 0) {
+      this.pos.y = -10000;
+      this.pos.x = this.startx;
+    }
+  }
+  render() {
+    fill(255, 255, 255, random(100, 230));
+    noStroke();
+    let kSize = floor(random(this.size / 2));
+    ellipse(this.pos.x, this.pos.y, this.size + kSize, this.size + kSize);
+  }
+}

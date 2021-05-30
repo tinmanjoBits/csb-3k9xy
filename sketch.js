@@ -7,9 +7,9 @@ let pellets = [];
 let prowns = [];
 let lites = [];
 let fishfloor = [];
+let singleBubbles = [];
 
 let ps;
-let pl;
 
 let ball;
 const WATERLEVEL = 50;
@@ -21,9 +21,10 @@ function setup() {
   createCanvas(800, 600);
   textSize(9);
   ps = loadSound("snds/pbubble.wav", playBubble);
-  pl = loadSound("snds/pbubble.wav", playBubble);
-  ps.setVolume(0.1);
-  pl.setVolume(0.09);
+
+  ps.setVolume(0.07);
+
+  //ps.loop(0, 0.2, 0.2, 0, 300);
 
   for (let i = 0; i < 100; i++) {
     bubbles[i] = new TankBubble();
@@ -59,12 +60,24 @@ function setup() {
 }
 
 function playBubble() {
+  if (bubbleSndCount > 3000) {
+    //   ps.stop();
+    //   ps.play();
+    bubbleSndCount = 0;
+  }
+  /*
   // Prevent sounds overload
   if (random() < 0.5) {
-    ps.rate(random(0.01, 0.8));
+    ps.rate(random(0.01, 0.3));
     ps.play();
-    ps.rate(random(0.1, 0.6));
+    ps.rate(random(0.01, 0.2));
     pl.play();
+
+    
+  } */
+  if (ps.isLoaded()) {
+    ps.rate(random(0.01, 0.7));
+    //  ps.play();
   }
 }
 
@@ -86,8 +99,7 @@ function mousePressed() {
   //fishes[0].currentTarget = createVector(mouseX, mouseY);
 
   //b = new Bubble(fishes[0].pos.x, fishes[0].pos.y);
-  b = new Bubble(mouseX, mouseY, 10);
-  ps.autoplay(true);
+  singleBubbles.push(new Bubble(mouseX, mouseY, 5, 10, 2));
 }
 
 function keyPressed() {
@@ -122,12 +134,26 @@ function draw() {
   doProwns();
   //doLites();
   // drawTankLighting();
+  doSingleBubbles();
+}
+
+function doSingleBubbles() {
+  for (let i = 0; i < singleBubbles.length; i++) {
+    singleBubbles[i].update();
+    singleBubbles[i].render();
+  }
+
+  for (let i = 0; i < singleBubbles.length; i++) {
+    if (singleBubbles[i].surfaceLife < 0) {
+      singleBubbles.splice(i, 1);
+    }
+  }
 }
 
 function drawTankLighting() {
   noStroke();
-  for (let y = 0; y < height; y += 5) {
-    let k = y / 150;
+  for (let y = 0; y < height; y += 15) {
+    let k = y / 90;
 
     fill(80, 80, 80, k);
 
@@ -142,11 +168,6 @@ function doProwns() {
   }
 }
 function doBubbles() {
-  if (bubbleSndCount > 3000) {
-    ps.stop();
-    ps.play();
-    bubbleSndCount = 0;
-  }
   for (let b of bubbles) {
     b.update();
     bubbleSndCount += 1;

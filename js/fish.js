@@ -13,7 +13,7 @@ class Fish {
     this.waitTime = floor(random(50, 500));
     this.size = 17;
     this.visibility = random(60, height / 2);
-    this.myBubble = new Bubble(this.pos.x, this.pos.y, random(5, 15));
+
     this.fishcol = floor(random(10, 120));
     this.fishpoos = [];
     this.rotation = 0;
@@ -102,7 +102,7 @@ class Fish {
     if (this.stomach <= 0) {
       this.state = 2;
       // chance of pooing
-      if (random() > 0.2) {
+      if (random() < 0.098) {
         for (let k = 0; k < floor(random(20)); k++) {
           this.fishpoos.push(
             new Poo(this.pos.x, this.pos.y, this.vel.x, this.vel.y)
@@ -144,9 +144,9 @@ class Fish {
       // set state to moving around randomly
       this.size += 1;
       this.state = 1;
-      //  if (random() > 0.5) {
-      //  this.myBubble = new Bubble(this.pos.x, this.pos.y, random(5, 15));
-      // }
+      if (random() < 0.1 && this.pos.y > WATERLEVEL + 70) {
+        singleBubbles.push(new Bubble(this.pos.x, this.pos.y, 5, 30, 1));
+      }
       this.vel.limit(0.3);
     }
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef, no-unused-vars */
 class TankBubble {
   constructor() {
     this.startx = 100;
@@ -78,14 +79,15 @@ class TankBubble {
 }
 
 class Bubble {
-  constructor(x, y, s) {
+  constructor(x, y, s, k = 20, c = 0) {
     this.pos = createVector(x, y);
     this.vel = createVector(random(-0.08, 0.08), -random(0.09, 0.6));
     this.acc = createVector(0, 0);
     this.size = s;
     this.atSurface = false;
-    this.surfaceLife = floor(random(30));
-    this.kSize = floor(random(this.size / 0.8));
+    this.surfaceLife = floor(random(5, 30));
+    this.kSize = random(2, k);
+    this.color = c;
   }
 
   update() {
@@ -125,7 +127,43 @@ class Bubble {
     }
   }
   render() {
-    fill(255, 255, 100, random(10, 170));
+    //fill(255, 255, 100, random(10, 170));
+    let rl;
+    let gl;
+    let bl;
+    let tm;
+    let tmx;
+
+    // normal bubble
+    if (this.color === 0) {
+      rl = 255;
+      gl = 255;
+      bl = 255;
+      tm = 40;
+      tmx = 100;
+    } // fish bubble
+    else if (this.color === 1) {
+      rl = 0;
+      gl = 200;
+      bl = 70;
+      tm = 60;
+      tmx = 170;
+    } else if (this.color === 2) {
+      rl = 100;
+      gl = 0;
+      bl = 200;
+      tm = 20;
+      tmx = 100;
+    } else {
+      rl = 255;
+      gl = 255;
+      bl = 255;
+      tm = 40;
+      tmx = 100;
+      //fill(255, 255, 255, random(40, 100));
+    }
+
+    fill(rl, gl, bl, random(tm, tmx));
 
     stroke(190);
     ellipse(
@@ -136,7 +174,7 @@ class Bubble {
     );
 
     noStroke();
-    fill(255, 255, 255, 160);
+    //  fill(255, 255, 255, 170);
     ellipse(
       this.pos.x + this.size / 2 + random(-1, 1),
       this.pos.y - random(0.5),

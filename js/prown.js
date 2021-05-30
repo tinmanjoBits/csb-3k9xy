@@ -70,6 +70,11 @@ class Prown {
       this.holdingPellet.vel.x = 0;
       this.holdingPellet.vel.y = 0;
     }
+
+    // produce bubbles randomly if holding pellet when not near the top level
+    if (random() < 0.006 && this.pos.y > WATERLEVEL + 70) {
+      singleBubbles.push(new Bubble(this.pos.x, this.pos.y, 1, 2));
+    }
   }
 
   moveTowardsPellet() {
